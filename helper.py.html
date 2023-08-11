@@ -1,0 +1,85 @@
+<html>
+<head>
+<title>helper.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+helper.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">urlextract </span><span class="s0">import </span><span class="s1">URLExtract</span>
+<span class="s0">from </span><span class="s1">wordcloud </span><span class="s0">import </span><span class="s1">WordCloud</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">from </span><span class="s1">collections </span><span class="s0">import </span><span class="s1">Counter</span>
+<span class="s0">import </span><span class="s1">emoji</span>
+<span class="s1">extract = URLExtract()</span>
+<span class="s0">def </span><span class="s1">fetch_stats(selected_user</span><span class="s0">, </span><span class="s1">df):</span>
+    <span class="s0">if </span><span class="s1">selected_user != </span><span class="s2">'Overall'</span><span class="s1">:</span>
+        <span class="s1">df = df[df[</span><span class="s2">'users'</span><span class="s1">] == selected_user]</span>
+    <span class="s1">num_messages = df.shape[</span><span class="s3">0</span><span class="s1">]</span>
+    <span class="s1">words = []</span>
+    <span class="s0">for </span><span class="s1">message </span><span class="s0">in </span><span class="s1">df[</span><span class="s2">'messages'</span><span class="s1">]:</span>
+        <span class="s1">words.extend(message.split())</span>
+    <span class="s1">num_media_messages = df[df[</span><span class="s2">'messages'</span><span class="s1">] == </span><span class="s2">'&lt;Media omitted&gt;'</span><span class="s1">].shape[</span><span class="s3">0</span><span class="s1">]</span>
+    <span class="s1">links=[]</span>
+    <span class="s0">for </span><span class="s1">message </span><span class="s0">in </span><span class="s1">df[</span><span class="s2">'messages'</span><span class="s1">]:</span>
+        <span class="s1">links.extend(extract.find_urls(message))</span>
+    <span class="s0">return </span><span class="s1">num_messages</span><span class="s0">, </span><span class="s1">len(words)</span><span class="s0">, </span><span class="s1">num_media_messages</span><span class="s0">,</span><span class="s1">len(links)</span>
+<span class="s0">def </span><span class="s1">most_busy_users(df):</span>
+    <span class="s1">x = df[</span><span class="s2">'users'</span><span class="s1">].value_counts().head()</span>
+    <span class="s1">df=round((df[</span><span class="s2">'users'</span><span class="s1">].value_counts()/df.shape[</span><span class="s3">0</span><span class="s1">])*</span><span class="s3">100</span><span class="s0">,</span><span class="s3">2</span><span class="s1">).reset_index().rename(columns={</span><span class="s2">'index'</span><span class="s1">:</span><span class="s2">'name'</span><span class="s0">,</span><span class="s2">'users'</span><span class="s1">:</span><span class="s2">'percent'</span><span class="s1">})</span>
+    <span class="s0">return </span><span class="s1">x</span><span class="s0">,</span><span class="s1">df</span>
+
+<span class="s0">def </span><span class="s1">create_wordcloud(selected_user</span><span class="s0">,</span><span class="s1">df):</span>
+    <span class="s1">f = open(</span><span class="s2">'stop_hinglish.txt'</span><span class="s0">, </span><span class="s2">'r'</span><span class="s1">)</span>
+    <span class="s1">stop_words = f.read()</span>
+    <span class="s0">if </span><span class="s1">selected_user != </span><span class="s2">'Overall'</span><span class="s1">:</span>
+        <span class="s1">df = df[df[</span><span class="s2">'users'</span><span class="s1">] == selected_user]</span>
+    <span class="s1">temp = df[df[</span><span class="s2">'users'</span><span class="s1">] != </span><span class="s2">'group_notification'</span><span class="s1">]</span>
+    <span class="s1">temp = temp[temp[</span><span class="s2">'messages'</span><span class="s1">] != </span><span class="s2">'&lt;Media omitted&gt;'</span><span class="s1">]</span>
+    <span class="s0">def </span><span class="s1">remove_stop_words(messages):</span>
+        <span class="s1">y=[]</span>
+        <span class="s0">for </span><span class="s1">word </span><span class="s0">in </span><span class="s1">messages.lower().split():</span>
+            <span class="s0">if </span><span class="s1">word </span><span class="s0">not in </span><span class="s1">stop_words:</span>
+                <span class="s1">y.append(word)</span>
+        <span class="s0">return </span><span class="s2">&quot; &quot;</span><span class="s1">.join(y)</span>
+    <span class="s1">wc=WordCloud(width=</span><span class="s3">500</span><span class="s0">,</span><span class="s1">height=</span><span class="s3">500</span><span class="s0">,</span><span class="s1">min_font_size=</span><span class="s3">10</span><span class="s0">,</span><span class="s1">background_color=</span><span class="s2">'grey'</span><span class="s1">)</span>
+    <span class="s1">temp[</span><span class="s2">'messages'</span><span class="s1">] = temp[</span><span class="s2">'messages'</span><span class="s1">].apply(remove_stop_words)</span>
+    <span class="s1">df_wc=wc.generate(temp[</span><span class="s2">'messages'</span><span class="s1">].str.cat(sep=</span><span class="s2">&quot; &quot;</span><span class="s1">))</span>
+    <span class="s0">return </span><span class="s1">df_wc</span>
+
+<span class="s0">def </span><span class="s1">most_common_words(selected_user</span><span class="s0">,</span><span class="s1">df):</span>
+
+    <span class="s1">f=open(</span><span class="s2">'stop_hinglish.txt'</span><span class="s0">,</span><span class="s2">'r'</span><span class="s1">)</span>
+    <span class="s1">stop_words=f.read()</span>
+    <span class="s0">if </span><span class="s1">selected_user != </span><span class="s2">'Overall'</span><span class="s1">:</span>
+        <span class="s1">df = df[df[</span><span class="s2">'users'</span><span class="s1">] == selected_user]</span>
+    <span class="s1">temp = df[df[</span><span class="s2">'users'</span><span class="s1">] != </span><span class="s2">'group_notification'</span><span class="s1">]</span>
+    <span class="s1">temp = temp[temp[</span><span class="s2">'messages'</span><span class="s1">] != </span><span class="s2">'&lt;Media omitted&gt;'</span><span class="s1">]</span>
+    <span class="s1">words = []</span>
+    <span class="s0">for </span><span class="s1">message </span><span class="s0">in </span><span class="s1">temp[</span><span class="s2">'messages'</span><span class="s1">]:</span>
+        <span class="s0">for </span><span class="s1">word </span><span class="s0">in </span><span class="s1">message.lower().split():</span>
+            <span class="s0">if </span><span class="s1">word </span><span class="s0">not in </span><span class="s1">stop_words:</span>
+                <span class="s1">words.append(word)</span>
+
+    <span class="s1">most_common_df=pd.DataFrame(Counter(words).most_common(</span><span class="s3">20</span><span class="s1">))</span>
+    <span class="s0">return </span><span class="s1">most_common_df</span>
+<span class="s0">def </span><span class="s1">emoji_helper(selected_user</span><span class="s0">,</span><span class="s1">df):</span>
+    <span class="s0">if </span><span class="s1">selected_user != </span><span class="s2">'Overall'</span><span class="s1">:</span>
+        <span class="s1">df = df[df[</span><span class="s2">'users'</span><span class="s1">] == selected_user]</span>
+    <span class="s1">emojis = []</span>
+    <span class="s0">for </span><span class="s1">message </span><span class="s0">in </span><span class="s1">df[</span><span class="s2">'messages'</span><span class="s1">]:</span>
+        <span class="s1">emojis.extend([c </span><span class="s0">for </span><span class="s1">c </span><span class="s0">in </span><span class="s1">message </span><span class="s0">if </span><span class="s1">c </span><span class="s0">in </span><span class="s1">emoji.EMOJI_DATA])</span>
+    <span class="s1">emoji_df=pd.DataFrame((Counter(emojis).most_common(len(Counter(emojis)))))</span>
+    <span class="s0">return </span><span class="s1">emoji_df</span>
+</pre>
+</body>
+</html>

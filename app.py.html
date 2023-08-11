@@ -1,0 +1,90 @@
+<html>
+<head>
+<title>app.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+app.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">streamlit </span><span class="s0">as </span><span class="s1">st</span>
+<span class="s0">import </span><span class="s1">preprocessor</span><span class="s0">,</span><span class="s1">helper</span>
+<span class="s0">import </span><span class="s1">matplotlib.pyplot </span><span class="s0">as </span><span class="s1">plt</span>
+<span class="s1">st.sidebar.title(</span><span class="s2">&quot;Whatsapp Chat Analyser&quot;</span><span class="s1">)</span>
+
+<span class="s1">uploaded_file = st.sidebar.file_uploader(</span><span class="s2">&quot;Choose a File&quot;</span><span class="s1">)</span>
+<span class="s0">if </span><span class="s1">uploaded_file </span><span class="s0">is not None</span><span class="s1">:</span>
+    <span class="s1">bytes_data=uploaded_file.getvalue()</span>
+    <span class="s1">data = bytes_data.decode(</span><span class="s2">&quot;utf-8&quot;</span><span class="s1">)</span>
+    <span class="s1">df = preprocessor.preprocess(data)</span>
+
+
+    <span class="s1">user_list = df[</span><span class="s2">'users'</span><span class="s1">].unique().tolist()</span>
+    <span class="s1">user_list.remove(</span><span class="s2">'group_notification'</span><span class="s1">)</span>
+    <span class="s1">user_list.sort()</span>
+    <span class="s1">user_list.insert(</span><span class="s3">0</span><span class="s0">, </span><span class="s2">&quot;Overall&quot;</span><span class="s1">)</span>
+    <span class="s1">selected_user = st.sidebar.selectbox(</span><span class="s2">&quot;Show Analysis wtr&quot;</span><span class="s0">, </span><span class="s1">user_list)</span>
+    <span class="s0">if </span><span class="s1">st.sidebar.button(</span><span class="s2">&quot;Show Analysis&quot;</span><span class="s1">):</span>
+        <span class="s1">num_messages</span><span class="s0">, </span><span class="s1">words</span><span class="s0">, </span><span class="s1">num_media_messages</span><span class="s0">, </span><span class="s1">num_links= helper.fetch_stats(selected_user</span><span class="s0">,</span><span class="s1">df)</span>
+        <span class="s1">col1</span><span class="s0">, </span><span class="s1">col2</span><span class="s0">, </span><span class="s1">col3</span><span class="s0">, </span><span class="s1">col4</span><span class="s0">, </span><span class="s1">= st.columns(</span><span class="s3">4</span><span class="s1">)</span>
+        <span class="s0">with </span><span class="s1">col1:</span>
+            <span class="s1">st.header(</span><span class="s2">&quot;Total Messages&quot;</span><span class="s1">)</span>
+            <span class="s1">st.title(num_messages)</span>
+        <span class="s0">with </span><span class="s1">col2:</span>
+            <span class="s1">st.header(</span><span class="s2">&quot;Total Words&quot;</span><span class="s1">)</span>
+            <span class="s1">st.title(words)</span>
+        <span class="s0">with </span><span class="s1">col3:</span>
+            <span class="s1">st.header(</span><span class="s2">&quot;Total Media shared&quot;</span><span class="s1">)</span>
+            <span class="s1">st.title(num_media_messages)</span>
+        <span class="s0">with </span><span class="s1">col4:</span>
+            <span class="s1">st.header(</span><span class="s2">&quot;Links shared&quot;</span><span class="s1">)</span>
+            <span class="s1">st.title(num_links)</span>
+
+
+        <span class="s0">if </span><span class="s1">selected_user == </span><span class="s2">'Overall'</span><span class="s1">:</span>
+            <span class="s1">st.title(</span><span class="s2">'Most Busy User'</span><span class="s1">)</span>
+            <span class="s1">x</span><span class="s0">, </span><span class="s1">new_df = helper.most_busy_users(df)</span>
+            <span class="s1">fig</span><span class="s0">, </span><span class="s1">ax = plt.subplots()</span>
+            <span class="s1">col1</span><span class="s0">, </span><span class="s1">col2</span><span class="s0">,</span><span class="s1">col3 = st.columns(</span><span class="s3">3</span><span class="s1">)</span>
+
+            <span class="s0">with </span><span class="s1">col1:</span>
+                <span class="s1">ax.bar(x.index</span><span class="s0">, </span><span class="s1">x.values</span><span class="s0">,</span><span class="s1">color=</span><span class="s2">'red'</span><span class="s1">)</span>
+                <span class="s1">plt.xticks(rotation=</span><span class="s2">'vertical'</span><span class="s1">)</span>
+                <span class="s1">st.pyplot(fig)</span>
+            <span class="s0">with </span><span class="s1">col2:</span>
+                <span class="s1">st.dataframe(new_df)</span>
+        <span class="s1">df_wc=helper.create_wordcloud(selected_user</span><span class="s0">,</span><span class="s1">df)</span>
+        <span class="s1">fig</span><span class="s0">,</span><span class="s1">ax=plt.subplots()</span>
+        <span class="s1">st.title(</span><span class="s2">&quot;wordcloud&quot;</span><span class="s1">)</span>
+        <span class="s1">ax.imshow(df_wc)</span>
+        <span class="s1">st.pyplot(fig)</span>
+
+    <span class="s1">most_common_df=helper.most_common_words(selected_user</span><span class="s0">,</span><span class="s1">df)</span>
+    <span class="s1">st.title(</span><span class="s2">&quot;Most Common Words&quot;</span><span class="s1">)</span>
+    <span class="s1">fig</span><span class="s0">,</span><span class="s1">ax=plt.subplots()</span>
+    <span class="s1">ax.barh(most_common_df[</span><span class="s3">0</span><span class="s1">]</span><span class="s0">,</span><span class="s1">most_common_df[</span><span class="s3">1</span><span class="s1">])</span>
+    <span class="s1">plt.xticks(rotation=</span><span class="s2">'vertical'</span><span class="s1">)</span>
+    <span class="s1">st.pyplot(fig)</span>
+
+    <span class="s1">emoji_df=helper.emoji_helper(selected_user</span><span class="s0">,</span><span class="s1">df)</span>
+    <span class="s1">st.title(</span><span class="s2">&quot;Emoji Analysis&quot;</span><span class="s1">)</span>
+    <span class="s1">col1</span><span class="s0">,</span><span class="s1">col2=st.columns(</span><span class="s3">2</span><span class="s1">)</span>
+    <span class="s0">with </span><span class="s1">col1:</span>
+        <span class="s1">st.dataframe(emoji_df)</span>
+    <span class="s0">with </span><span class="s1">col2:</span>
+        <span class="s1">fig</span><span class="s0">,</span><span class="s1">ax=plt.subplots()</span>
+        <span class="s1">ax.pie(emoji_df[</span><span class="s3">1</span><span class="s1">]</span><span class="s0">,</span><span class="s1">labels=emoji_df[</span><span class="s3">0</span><span class="s1">])</span>
+        <span class="s1">st.pyplot(fig)</span>
+
+
+</pre>
+</body>
+</html>

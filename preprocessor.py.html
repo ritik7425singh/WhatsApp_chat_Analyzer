@@ -1,0 +1,54 @@
+<html>
+<head>
+<title>preprocessor.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+preprocessor.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">re</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+
+<span class="s0">def </span><span class="s1">preprocess(data):</span>
+    <span class="s1">pattern = </span><span class="s2">r'(\d{1,2}/\d{1,2}/\d{2,4},\s*\d{1,2}:\d{2}\s*[ap]m)\s*-\s*(.*)'</span>
+    <span class="s1">matches = re.findall(pattern</span><span class="s0">, </span><span class="s1">data)</span>
+    <span class="s1">dates = [match[</span><span class="s3">0</span><span class="s1">].replace(</span><span class="s2">'</span><span class="s0">\u202f</span><span class="s2">'</span><span class="s0">, </span><span class="s2">''</span><span class="s1">) </span><span class="s0">for </span><span class="s1">match </span><span class="s0">in </span><span class="s1">matches]</span>
+    <span class="s1">messages = [match[</span><span class="s3">1</span><span class="s1">].strip() </span><span class="s0">for </span><span class="s1">match </span><span class="s0">in </span><span class="s1">matches]</span>
+    <span class="s1">df = pd.DataFrame({</span><span class="s2">'user_message'</span><span class="s1">: messages</span><span class="s0">, </span><span class="s2">'message_date'</span><span class="s1">: dates})</span>
+
+    <span class="s0">def </span><span class="s1">custom_parser(date_str):</span>
+        <span class="s0">return </span><span class="s1">pd.to_datetime(date_str</span><span class="s0">, </span><span class="s1">format=</span><span class="s2">'%d/%m/%y, %I:%M%p'</span><span class="s1">)</span>
+
+    <span class="s1">df[</span><span class="s2">'message_date'</span><span class="s1">] = df[</span><span class="s2">'message_date'</span><span class="s1">].apply(custom_parser)</span>
+    <span class="s1">df.rename(columns={</span><span class="s2">'message_date'</span><span class="s1">: </span><span class="s2">'date'</span><span class="s1">}</span><span class="s0">, </span><span class="s1">inplace=</span><span class="s0">True</span><span class="s1">)</span>
+    <span class="s1">users = []</span>
+    <span class="s1">messages = []</span>
+    <span class="s0">for </span><span class="s1">message </span><span class="s0">in </span><span class="s1">df[</span><span class="s2">'user_message'</span><span class="s1">]:</span>
+        <span class="s1">entry = re.split(</span><span class="s2">'([\w\W]+?):\s'</span><span class="s0">, </span><span class="s1">message)</span>
+        <span class="s0">if </span><span class="s1">entry[</span><span class="s3">1</span><span class="s1">:]:</span>
+            <span class="s1">users.append(entry[</span><span class="s3">1</span><span class="s1">])</span>
+            <span class="s1">messages.append(entry[</span><span class="s3">2</span><span class="s1">])</span>
+        <span class="s0">else</span><span class="s1">:</span>
+            <span class="s1">users.append(</span><span class="s2">'group_notification'</span><span class="s1">)</span>
+            <span class="s1">messages.append(entry[</span><span class="s3">0</span><span class="s1">])</span>
+
+    <span class="s1">df[</span><span class="s2">'users'</span><span class="s1">] = users</span>
+    <span class="s1">df[</span><span class="s2">'messages'</span><span class="s1">] = messages</span>
+    <span class="s1">df.drop(columns=[</span><span class="s2">'user_message'</span><span class="s1">]</span><span class="s0">, </span><span class="s1">inplace=</span><span class="s0">True</span><span class="s1">)</span>
+    <span class="s1">df[</span><span class="s2">'years'</span><span class="s1">] = df[</span><span class="s2">'date'</span><span class="s1">].dt.year</span>
+    <span class="s1">df[</span><span class="s2">'month'</span><span class="s1">] = df[</span><span class="s2">'date'</span><span class="s1">].dt.month_name()</span>
+    <span class="s1">df[</span><span class="s2">'day'</span><span class="s1">] = df[</span><span class="s2">'date'</span><span class="s1">].dt.day</span>
+    <span class="s1">df[</span><span class="s2">'hour'</span><span class="s1">] = df[</span><span class="s2">'date'</span><span class="s1">].dt.hour</span>
+    <span class="s1">df[</span><span class="s2">'min'</span><span class="s1">] = df[</span><span class="s2">'date'</span><span class="s1">].dt.minute</span>
+    <span class="s0">return </span><span class="s1">df</span></pre>
+</body>
+</html>
